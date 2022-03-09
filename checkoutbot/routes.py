@@ -2,21 +2,14 @@ from flask_restx import Namespace, fields, Resource
 from http import HTTPStatus
 from models import BaseModel
 from typing import Dict, List, Type
-import os
+model = BaseModel(register_count=25)
 
-model_name = os.getenv("MODEL_NAME")
-if not model_name:
-    model_name = "BaseModel"
+print(f"Model successfully initialized! {model.__class__.__name__}")
 
 
-print(f"Using model: {model_name}")
-
-model = BaseModel.get_model(model_name=model_name)(register_count=25)
-
-print("Model successfully initialized!")
-
-
-
+"""
+ ==============    NAMESPACES ================
+"""
 
 health_namespace = Namespace('health', description='Namespace for server health')
 
@@ -27,6 +20,11 @@ add_namespace = Namespace('add', description='Namespace for item customer to reg
 checkout_namespace = Namespace('checkout', description='Namespace for checkout')
 
 clear_namespace = Namespace('clear', description="Clear all registers. Start a new state")
+
+
+"""
+ ==============    NAMESPACES MODELS ================
+"""
 
 register_model = register_namespace.model(
     'Register', {
@@ -51,6 +49,11 @@ checkout_model = checkout_namespace.model(
 )
 
 
+
+"""
+ ==============  NAMESPACE ROUTES  ================
+"""
+
 @health_namespace.route('')
 class GetHealth(Resource):
     def get(self):
@@ -60,8 +63,6 @@ class GetHealth(Resource):
         status = "OK"
 
         return status, HTTPStatus.OK
-
-
 
 
 @register_namespace.route('')
@@ -78,7 +79,6 @@ class Register(Resource):
         return registers, HTTPStatus.OK
 
 
-
 @add_namespace.route('')
 class Register(Resource):
     @add_namespace.marshal_with(add_model)
@@ -93,6 +93,7 @@ class Register(Resource):
         model.add(data["customer_id"], data["item_id"])
 
         return data, HTTPStatus.CREATED
+
 
 @checkout_namespace.route('')
 class Checkout(Resource):
