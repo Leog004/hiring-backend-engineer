@@ -118,7 +118,7 @@ class BaseModel:
             # print(f"the register selected is {register}")
             #self.registers[register].append(user)
 
-        return user
+        #return user
 
 
     def checkout(self, customer_id: int):

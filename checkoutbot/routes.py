@@ -1,7 +1,12 @@
+import flask
 from flask_restx import Namespace, fields, Resource
 from http import HTTPStatus
 from models import BaseModel
 from typing import Dict, List, Type
+from decouple import config
+
+API_TESTING = config('TESTING', default=False, cast=bool) # change to true when running the generator file to test routes
+
 model = BaseModel(register_count=25)
 
 print(f"Model successfully initialized! {model.__class__.__name__}")
@@ -28,7 +33,7 @@ clear_namespace = Namespace('clear', description="Clear all registers. Start a n
 
 register_model = register_namespace.model(
     'Register', {
-        'register_count' : fields.Integer(description="Total count of registers operating"),
+        'register_count' : fields.Raw(description="Total count of registers operating"),
         'registers' : fields.Raw(description="register detail data"),
     }
 )
@@ -36,15 +41,15 @@ register_model = register_namespace.model(
 
 add_model = add_namespace.model(
     'Add', {
-        'customer_id': fields.Integer(descripton="customer id"),
-        'item_id': fields.Integer(description="item id")
+        'customer_id': fields.Raw(descripton="customer id"),
+        'item_id': fields.Raw(description="item id")
     }
 )
 
 checkout_model = checkout_namespace.model(
     'Checkout',
     {
-        'customer_id': fields.Integer(descripton="customer id")
+        'customer_id': fields.Raw(descripton="customer id")
     }
 )
 
@@ -81,18 +86,28 @@ class Register(Resource):
 
 @add_namespace.route('')
 class Register(Resource):
-    @add_namespace.marshal_with(add_model)
+    @add_namespace.marshal_with(register_model)
     @add_namespace.expect(add_model)
     def post(self):
         """
             Add user to register with item
         """
+        customer_id = ""
+        item_id = ""
 
-        data = add_namespace.payload
+        if API_TESTING: 
+            customer_id = flask.request.form["customer_id"]
+            item_id = flask.request.form["item_id"]
+        
+        else:
+            data = add_namespace.payload
+            customer_id = data["customer_id"]
+            item_id = data["item_id"]
 
-        model.add(data["customer_id"], data["item_id"])
 
-        return data, HTTPStatus.CREATED
+        model.add(customer_id, item_id)
+
+        return model, HTTPStatus.CREATED
 
 
 @checkout_namespace.route('')
@@ -103,10 +118,17 @@ class Checkout(Resource):
         """
             Checkout customer from register
         """
+        customer_id = ""
+        
+        if API_TESTING: 
+            customer_id = flask.request.form["customer_id"]
+        
+        else:
+            data = register_namespace.payload
+            customer_id = data["customer_id"]
 
-        data = register_namespace.payload
 
-        model.checkout(data["customer_id"])
+        model.checkout(customer_id)
 
         registers = model
 
