@@ -59,51 +59,53 @@ class BaseModel:
         UserModel.clear()
 
 
-    def _select_register(self, customer_id: int) -> int:
+    def _select_register(self) -> int:
+
+        minUsersInRegister = 100 # Or max number allowed in memory
+        tempMin = minUsersInRegister
+        register = -1
+
+        for reg in self.registers:
+            minUsersInRegister = min(minUsersInRegister, len(self.registers[reg]))
+
+            if minUsersInRegister < tempMin:
+                tempMin = minUsersInRegister
+                register = reg
+
+
+
+        return register
+
+
+    def _remove_user_from_register(self, customer_id: int) -> int:
         """
         Select a register to use for new customers.
         """
-        selectedRegister = -1
-        flag = False
 
-        for key, value in self.registers.items():
-            if len(value) > 0:
-                for item in value:
-                    if item["customer_id"] == customer_id:
-                        selectedRegister = key
-                        flag = True
+        for _, value in self.registers.items():
+            count = 0
+            for item in value:
+                if item["customer_id"] == customer_id:
+                        value.pop(count)
                         break
-            else:
-                if not flag:
-                    flag = True
-                    selectedRegister = key
+                count += 1
 
 
-        return selectedRegister
 
 
     def add(self, customer_id: int, item_id: int):
 
         user = UserModel.FindUserByCustomer_id(customer_id)
-
-
         """
             - If the customer is new, select a register using the model.
         """
         if user is None:
-            register = self._select_register(customer_id)
+            user = UserModel(customer_id)
+            user.add_item(item_id)
+            user_object = {"customer_id": user.customer_id, "items": user.items}
 
-            if register != -1:
-                user = UserModel(customer_id)
-                user.add_item(item_id)
-                object = {"customer_id": user.customer_id, "items": user.items}
-
-                self.registers[register].append(object)
-                #print(f"the register selected is {register}")
-
-            else:
-                # All registers are being used
-                print(f"All registers are being used could not add customer {customer_id}")
+            register = self._select_register()
+            self.registers[register].append(user_object)
 
         else:
             """
@@ -111,14 +113,9 @@ class BaseModel:
                 - If the customer already has items on a register, select that register.
             """
             user.add_item(item_id)
-            #register = self._select_register(customer_id)
 
 
 
-            # print(f"the register selected is {register}")
-            #self.registers[register].append(user)
-
-        #return user
 
 
     def checkout(self, customer_id: int):
@@ -126,15 +123,12 @@ class BaseModel:
         Clear the customer's register assignment and remove their items from the register.
         """
 
-        #UserModel.deleteUser(customer_id)
-
-        register = self._select_register(customer_id)
-
         user = UserModel.FindUserByCustomer_id(customer_id)
 
         if user:
             UserModel.deleteUser(customer_id)
-            self.registers[register].pop()
+            self._remove_user_from_register(customer_id)
+
 
         return self.registers
         # raise NotImplementedError()
