@@ -77,7 +77,7 @@ class BaseModel:
         return register
 
 
-    def _remove_user_from_register(self, customer_id: int) -> int:
+    def _remove_user_from_register(self, customer_id: int):
         """
         Select a register to use for new customers.
         """
