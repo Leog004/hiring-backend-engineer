@@ -130,7 +130,7 @@ class BaseModel:
             self._remove_user_from_register(customer_id)
 
 
-        return self.registers
+        # return self.registers
         # raise NotImplementedError()
 
 
